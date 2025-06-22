@@ -1,0 +1,690 @@
+openapi: 3.0.3
+info:
+  title: AdoptMe API
+  description: |
+    API para la plataforma de adopción de mascotas AdoptMe.
+    Permite gestionar usuarios, mascotas y adopciones.
+  version: 1.0.0
+  contact:
+    name: Soporte
+    email: soporte@adoptme.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: http://localhost:8081
+    description: Servidor de desarrollo
+  - url: https://api.adoptme.com
+    description: Servidor de producción
+
+tags:
+  - name: Sessions
+    description: Operaciones de autenticación
+  - name: Users
+    description: Operaciones con usuarios
+  - name: Pets
+    description: Operaciones con mascotas
+  - name: Adoptions
+    description: Operaciones de adopción
+
+components:
+  # Schemas used in the API documentation
+  schemas_to_include:
+    User:
+      $ref: '#/components/schemas/User'
+    Pet:
+      $ref: '#/components/schemas/Pet'
+    Adoption:
+      $ref: '#/components/schemas/Adoption'
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        Ingrese el token JWT en el formato: Bearer <token>
+        
+        Ejemplo: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`
+
+  schemas:
+    # User schema is used in user-related endpoints
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+          format: objectid
+          example: 60f7b1b3b3f3b3b3b3b3b3b3a
+        first_name:
+          type: string
+          example: Juan
+          description: Nombre del usuario
+        last_name:
+          type: string
+          example: Pérez
+          description: Apellido del usuario
+        email:
+          type: string
+          format: email
+          example: juan@example.com
+          description: Email del usuario (debe ser único)
+        password:
+          type: string
+          format: password
+          example: password123
+          description: Contraseña del usuario (se almacena hasheada)
+        role:
+          type: string
+          enum: [user, admin]
+          default: user
+          example: user
+          description: Rol del usuario
+        pets:
+          type: array
+          items:
+            $ref: '#/components/schemas/PetReference'
+          description: Lista de mascotas asociadas al usuario
+        adoptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdoptionReference'
+          description: Lista de adopciones del usuario
+        isActive:
+          type: boolean
+          example: true
+          description: Indica si el usuario está activo
+        createdAt:
+          type: string
+          format: date-time
+          example: '2025-06-22T16:52:10.783Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2025-06-22T16:52:10.783Z'
+      required:
+        - first_name
+        - last_name
+        - email
+        - password
+
+    PetReference:
+      type: object
+      properties:
+        _id:
+          type: string
+          format: objectid
+          example: 60f7b1b3b3f3b3b3b3b3b3b3b
+          description: ID de referencia a la mascota
+        name:
+          type: string
+          example: Max
+          description: Nombre de la mascota
+        species:
+          type: string
+          example: Perro
+          description: Especie de la mascota
+
+    AdoptionReference:
+      type: object
+      properties:
+        _id:
+          type: string
+          format: objectid
+          example: 60f7b1b3b3f3b3b3b3b3b3b3c
+          description: ID de referencia a la adopción
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+          example: approved
+          description: Estado de la adopción
+        pet:
+          $ref: '#/components/schemas/PetReference'
+        createdAt:
+          type: string
+          format: date-time
+          example: '2025-06-22T16:52:10.783Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2025-06-22T16:52:10.783Z'
+
+    PetInput:
+      type: object
+      required: [name, specie, birthDate]
+      properties:
+        name:
+          type: string
+          example: Firulais
+          description: Nombre de la mascota
+        specie:
+          type: string
+          example: Perro
+          description: Especie de la mascota
+          enum: [Perro, Gato, Conejo, Otro]
+        birthDate:
+          type: string
+          format: date
+          example: '2020-01-01'
+          description: Fecha de nacimiento (YYYY-MM-DD)
+        description:
+          type: string
+          example: Muy juguetón y cariñoso
+          description: Descripción de la mascota
+        image:
+          type: string
+          format: uri
+          example: https://example.com/pet.jpg
+          description: URL de la imagen de la mascota
+
+    Pet:
+      allOf:
+        - $ref: '#/components/schemas/PetInput'
+        - type: object
+          properties:
+            _id:
+              type: string
+              example: 60f7b1b3b3f3b3b3b3b3b3b3b
+            owner:
+              type: string
+              description: ID del dueño
+              example: 60f7b1b3b3f3b3b3b3b3b3b3a
+            adopted:
+              type: boolean
+              default: false
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    Adoption:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 60f7b1b3b3f3b3b3b3b3b3b3c
+        owner:
+          type: string
+          description: ID del usuario dueño
+          example: 60f7b1b3b3f3b3b3b3b3b3b3a
+        pet:
+          type: string
+          description: ID de la mascota
+          example: 60f7b1b3b3f3b3b3b3b3b3b3b
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+          default: pending
+        notes:
+          type: string
+          example: El adoptante parece ser una buena opción
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      properties:
+        status:
+          type: string
+          example: error
+        error:
+          type: string
+          example: Mensaje de error descriptivo
+
+    ValidationError:
+      type: object
+      properties:
+        status:
+          type: string
+          example: error
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: email
+              message:
+                type: string
+                example: Debe ser un correo electrónico válido
+
+  responses:
+    UnauthorizedError:
+      description: No autorizado - Se requiere autenticación
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            status: error
+            error: No autorizado - Token no proporcionado o inválido
+    
+    ForbiddenError:
+      description: Prohibido - No tienes permisos para realizar esta acción
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            status: error
+            error: No tienes permisos para realizar esta acción
+    
+    ServerError:
+      description: Error del servidor
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            status: error
+            error: Ha ocurrido un error en el servidor
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/sessions/register:
+    post:
+      tags: [Sessions]
+      summary: Registrar un nuevo usuario
+      description: Crea una nueva cuenta de usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [first_name, last_name, email, password]
+              properties:
+                first_name:
+                  type: string
+                  example: Juan
+                last_name:
+                  type: string
+                  example: Pérez
+                email:
+                  type: string
+                  format: email
+                  example: juan@example.com
+                password:
+                  type: string
+                  format: password
+                  example: miContraseña123
+                  minLength: 6
+      responses:
+        '201':
+          description: Usuario registrado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Usuario registrado exitosamente
+        '400':
+          description: Error de validación o usuario ya existe
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/sessions/login:
+    post:
+      tags: [Sessions]
+      summary: Iniciar sesión
+      description: Inicia sesión con email y contraseña
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: juan@example.com
+                password:
+                  type: string
+                  format: password
+                  example: miContraseña123
+      responses:
+        '200':
+          description: Inicio de sesión exitoso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        '400':
+          description: Credenciales inválidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/users:
+    get:
+      tags: [Users]
+      summary: Obtener todos los usuarios
+      description: Obtiene una lista de todos los usuarios registrados en el sistema. Requiere autenticación de administrador.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de usuarios obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  payload:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/users/{uid}:
+    get:
+      tags: [Users]
+      summary: Obtener un usuario por ID
+      description: Obtiene los detalles de un usuario específico por su ID. Los usuarios solo pueden ver su propia información a menos que sean administradores.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: uid
+          required: true
+          schema:
+            type: string
+          description: ID del usuario a buscar
+      responses:
+        '200':
+          description: Usuario encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  payload:
+                    $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/pets:
+    get:
+      tags: [Pets]
+      summary: Obtener todas las mascotas
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de mascotas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  payload:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Pet'
+    
+    post:
+      tags: [Pets]
+      summary: Crear una nueva mascota
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PetInput'
+      responses:
+        '201':
+          description: Mascota creada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  payload:
+                    $ref: '#/components/schemas/Pet'
+        '400':
+          description: Error de validación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /api/pets/{pid}:
+    put:
+      tags: [Pets]
+      summary: Actualizar una mascota
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: pid
+          required: true
+          schema:
+            type: string
+          description: ID de la mascota a actualizar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PetInput'
+      responses:
+        '200':
+          description: Mascota actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  payload:
+                    $ref: '#/components/schemas/Pet'
+        '400':
+          description: Error de validación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '404':
+          description: Mascota no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags: [Pets]
+      summary: Eliminar una mascota
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: pid
+          required: true
+          schema:
+            type: string
+          description: ID de la mascota a eliminar
+      responses:
+        '200':
+          description: Mascota eliminada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Mascota eliminada exitosamente
+        '404':
+          description: Mascota no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/adoptions:
+    get:
+      tags: [Adoptions]
+      summary: Obtener todas las adopciones
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de adopciones
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  payload:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Adoption'
+
+  /api/adoptions/{aid}:
+    get:
+      tags: [Adoptions]
+      summary: Obtener una adopción por ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: aid
+          required: true
+          schema:
+            type: string
+          description: ID de la adopción a buscar
+      responses:
+        '200':
+          description: Adopción encontrada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  payload:
+                    $ref: '#/components/schemas/Adoption'
+        '404':
+          description: Adopción no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/adoptions/{uid}/{pid}:
+    post:
+      tags: [Adoptions]
+      summary: Crear una nueva solicitud de adopción
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: uid
+          required: true
+          schema:
+            type: string
+          description: ID del usuario que solicita la adopción
+        - in: path
+          name: pid
+          required: true
+          schema:
+            type: string
+          description: ID de la mascota a adoptar
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes:
+                  type: string
+                  description: Notas adicionales para la solicitud de adopción
+      responses:
+        '201':
+          description: Solicitud de adopción creada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  payload:
+                    $ref: '#/components/schemas/Adoption'
+        '400':
+          description: La mascota ya ha sido adoptada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Usuario o mascota no encontrados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'

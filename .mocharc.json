@@ -1,0 +1,9 @@
+{
+  "node-option": ["experimental-vm-modules", "no-warnings"],
+  "extension": ["js", "mjs"],
+  "recursive": true,
+  "exit": true,
+  "timeout": 10000,
+  "color": true,
+  "loader": "test/test-loader.js"
+}

@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: adoptme-test-app
+    environment:
+      - NODE_ENV=test
+      - PORT=3001
+      - MONGO_URI=mongodb://mongo:27017/adoptme-test
+      - JWT_SECRET=test_secret_key
+    ports:
+      - "3001:3001"
+    depends_on:
+      - mongo
+    volumes:
+      - .:/app
+      - /app/node_modules
+    networks:
+      - adoptme-network
+    command: sh -c "npm install && npm test"
+
+  mongo:
+    image: mongo:6.0
+    container_name: adoptme-test-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_test_data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=adoptme-test
+    networks:
+      - adoptme-network
+
+networks:
+  adoptme-network:
+    driver: bridge
+
+volumes:
+  mongodb_test_data:
+    driver: local
